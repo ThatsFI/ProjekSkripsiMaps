@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOGIN</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Helvetica;
+        background: #eee;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      hgroup {
+        text-align: center;
+        margin-top: 4em;
+        margin-bottom: 0px;
+      }
+
+      h1,
+      h3 {
+        font-weight: 300;
+      }
+
+      h1 {
+        color: #000000;
+        font-weight: bold;
+      }
+
+      h3 {
+        color: #4a89dc;
+      }
+
+      form {
+        width: 380px;
+        margin: 4em auto;
+        padding: 3em 2em 2em 2em;
+        background: #fafafa;
+        border: 1px solid #ebebeb;
+        border-radius: 10px;
+        box-shadow: rgba(0, 0, 0, 0.14902) 0px 1px 1px 0px,
+          rgba(0, 0, 0, 0.09804) 0px 1px 2px 0px;
+      }
+
+      .group {
+        position: relative;
+        margin-bottom: 45px;
+      }
+
+      input {
+        font-size: 18px;
+        padding: 10px 10px 10px 5px;
+        background: #fafafa;
+        color: #636363;
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid #757575;
+      }
+
+      input:focus {
+        outline: none;
+      }
+
+      label {
+        color: #999;
+        font-size: 18px;
+        font-weight: normal;
+        position: absolute;
+        pointer-events: none;
+        left: 5px;
+        top: 10px;
+        transition: all 0.2s ease;
+      }
+
+      input:focus ~ label,
+      input.used ~ label {
+        top: -20px;
+        transform: scale(0.75);
+        left: -2px;
+        color: #4a89dc;
+      }
+
+      .bar {
+        position: relative;
+        display: block;
+        width: 100%;
+      }
+
+      .bar:before,
+      .bar:after {
+        content: "";
+        height: 2px;
+        width: 0;
+        bottom: 1px;
+        position: absolute;
+        background: #4a89dc;
+        transition: all 0.2s ease;
+      }
+
+      .bar:before {
+        left: 50%;
+      }
+
+      .bar:after {
+        right: 50%;
+      }
+
+      input:focus ~ .bar:before,
+      input:focus ~ .bar:after {
+        width: 50%;
+      }
+
+      .highlight {
+        position: absolute;
+        height: 60%;
+        width: 100px;
+        top: 25%;
+        left: 0;
+        pointer-events: none;
+        opacity: 0.5;
+      }
+
+      input:focus ~ .highlight {
+        animation: inputHighlighter 0.3s ease;
+      }
+
+      @keyframes inputHighlighter {
+        from {
+          background: #4a89dc;
+        }
+        to {
+          width: 0;
+          background: transparent;
+        }
+      }
+
+      .button {
+        position: relative;
+        display: inline-block;
+        padding: 12px 24px;
+        width: 100%;
+        color: #fff;
+        font-size: 16px;
+        text-align: center;
+        background: transparent;
+        border: 0;
+        border-radius: 10px;
+        border-bottom: 2px solid #3160b6;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .buttonBlue {
+        background: #4a89dc;
+        text-shadow: 1px 1px 0 rgba(39, 110, 204, 0.5);
+      }
+
+      .buttonBlue:hover {
+        background: #357bd8;
+      }
+
+      footer {
+        text-align: center;
+      }
+
+      footer p {
+        color: #888;
+        font-size: 13px;
+        letter-spacing: 0.4px;
+      }
+
+      footer a {
+        color: #4a89dc;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      footer a:hover {
+        color: #666;
+        text-decoration: underline;
+      }
+
+      footer img {
+        width: 80px;
+        transition: all 0.2s ease;
+      }
+
+      footer img:hover {
+        opacity: 0.83;
+      }
+
+      footer img:focus,
+      footer a:focus {
+        outline: none;
+      }
+    </style>
+  </head>
+    <hgroup>
+      <h1>LOGIN</h1>
+    </hgroup>
+
+    <!-- Menu Login -->
+    <form id="loginForm">
+      <div class="group">
+        <input type="text" id="username" name="username" required />
+        <span class="highlight"></span><span class="bar"></span>
+        <label>Username</label>
+      </div>
+
+      <div class="group">
+        <input type="password" id="password" name="password" required />
+        <span class="highlight"></span><span class="bar"></span>
+        <label>Password</label>
+      </div>
+
+      <!-- Tombol Submit login -->
+      <button type="submit" class="button buttonBlue" id="submitBtn">
+        Login
+      </button>
+
+      <!-- menampilkan pesan hasil login agar pengguna tahu apakah login berhasil atau gagal -->
+      <div
+        id="messageBox"
+        style="text-align: center; margin-top: 1em; font-weight: bold"
+      ></div>
+    </form>
+    <div
+      id="errorMessage"
+      style="color: red; text-align: center; margin-top: 1em"
+    ></div>
+
+    <script>
+      // Efek label animasi
+      window.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("input").forEach((input) => {
+          input.addEventListener("blur", () => {
+            input.classList.toggle("used", input.value !== "");
+          });
+        });
+      });
+
+      // Fungsi tampilkan pesan
+      function showMessage(message, color = "red") {
+        const msgBox = document.getElementById("messageBox");
+        const msgErr = document.getElementById("errorMessage")
+        msgBox.textContent = message;
+        msgBox.style.color = color;
+      }
+
+      // Event submit pada form
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Cegah reload
+
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          const response = await fetch("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: `username=${encodeURIComponent(
+              username
+            )}&password=${encodeURIComponent(password)}`,
+          });
+
+          if (response.redirected) {
+            showMessage("Login berhasil! Mengarahkan ke Tampilan Area Strategis...", "green");
+            setTimeout(() => {
+              window.location.href = response.url;
+            }, 1000);
+          } else {
+            const result = await response.text();
+            showMessage(result, "red");
+          }
+        });
+    </script>
+  </body>
+</html>

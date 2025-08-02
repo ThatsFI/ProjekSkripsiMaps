@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Heatmap Area Strategis</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 56px;
+        background-color: #ffffff;
+        color: rgb(0, 0, 0);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        z-index: 2000;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
+      }
+
+      .navbar-title {
+        font-size: 18px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .navbar-menu {
+        display: flex;
+        gap: 10px;
+      }
+
+      .navbar-button {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        background-color: #2583ff;
+        padding: 6px 14px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+        white-space: nowrap;
+      }
+
+      .navbar-menu a:hover {
+        background-color: #1900a8;
+      }
+
+      .navbar-logout {
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        background-color: #ff0000;
+        padding: 6px 14px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+        white-space: nowrap;
+      }
+
+      .navbar-logout a:hover {
+        background-color: #d30000;
+      }
+
+      body {
+        margin: 0;
+        padding-top: 56px;
+        font-family: "Segoe UI", Roboto, sans-serif;
+      }
+
+      #map {
+        position: absolute;
+        top: 56px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1;
+      }
+
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1500;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 12px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      #controls label {
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+      }
+
+      #controls select {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        background-color: #fff;
+        color: #333;
+        transition: border-color 0.2s;
+      }
+
+      #controls select:focus {
+        border-color: #007bff;
+        outline: none;
+      }
+
+      .leaflet-legend {
+        line-height: 18px;
+        color: #333;
+        background: white;
+        padding: 10px 14px;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        font-size: 13px;
+        margin-top: 10px;
+      }
+
+      .leaflet-legend i {
+        width: 12px;
+        height: 12px;
+        float: left;
+        margin-right: 8px;
+        margin-top: 3px;
+        opacity: 0.8;
+        border-radius: 2px;
+      }
+
+      @media (max-width: 768px) {
+        .navbar {
+          flex-direction: row;
+          align-items: center;
+          height: auto;
+          padding: 18px 16px;
+        }
+
+        .navbar-title {
+          font-size: 16px;
+        }
+
+        #controls {
+          flex-direction: column;
+          align-items: stretch;
+          padding: 10px;
+        }
+
+        #controls label,
+        #controls select {
+          font-size: 16px;
+        }
+
+        .leaflet-legend {
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <div class="navbar-title">Penentuan Area Strategis Berbasis Heatmap</div>
+      <div class="navbar-menu">
+        <a href="/dashboard" class="navbar-button">Titik Strategis </a>
+        <a href="/logout" class="navbar-logout">Logout</a>
+      </div>
+    </div>
+
+    <div>
+      <div id="controls">
+        <label for="hourSelect">Pilih Jam:</label>
+        <select id="hourSelect"></select>
+      </div>
+
+      <div id="map"></div>
+    </div>
+
+    <!-- Leaflet library -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet.heat plugin -->
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+    <script>
+      const map = L.map("map").setView([-5.120475, 119.415943], 12);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      let allData = null;
+      let heatLayer = null;
+      let markers = [];
+
+      function showHeatmapForHour(hour) {
+        if (!allData) return;
+
+        const features = allData.features.filter(
+          (f) => f.properties.HourOfDay === hour
+        );
+
+        if (heatLayer) {
+          map.removeLayer(heatLayer);
+        }
+
+        // Hapus marker sebelumnya
+        markers.forEach((marker) => map.removeLayer(marker));
+        markers = [];
+
+        const heatData = features.map((f) => {
+          const lat = f.geometry.coordinates[1];
+          const lon = f.geometry.coordinates[0];
+          let intensity = 0.3;
+          if (f.properties.cluster === 1) intensity = 0.6;
+          else if (f.properties.cluster === 2) intensity = 1.0;
+
+          // Invisible clickable marker
+          const marker = L.circleMarker([lat, lon], {
+            radius: 8,
+            fillColor: "#000",
+            color: "#000",
+            weight: 0,
+            opacity: 0,
+            fillOpacity: 0,
+          }).addTo(map);
+
+          marker.bindPopup(
+            `<a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">Lihat di Google Maps</a>`
+          );
+
+          markers.push(marker);
+
+          return [lat, lon, intensity];
+        });
+
+        heatLayer = L.heatLayer(heatData, {
+          radius: 25,
+          blur: 15,
+          maxZoom: 17,
+        }).addTo(map);
+      }
+
+      fetch("clustering_result.geojson")
+        .then((res) => res.json())
+        .then((data) => {
+          allData = data;
+          const hours = [
+            ...new Set(data.features.map((f) => f.properties.HourOfDay)),
+          ].sort((a, b) => a - b);
+
+          const select = document.getElementById("hourSelect");
+          hours.forEach((hour) => {
+            const option = document.createElement("option");
+            option.value = hour;
+            option.textContent = `${hour}:00`;
+            select.appendChild(option);
+          });
+
+          showHeatmapForHour(hours[0]);
+          select.addEventListener("change", (e) => {
+            const selectedHour = parseInt(e.target.value);
+            showHeatmapForHour(selectedHour);
+          });
+        });
+
+      const legend = L.control({ position: "topright" });
+      legend.onAdd = function (map) {
+        const div = L.DomUtil.create("div", "leaflet-legend");
+        div.innerHTML = `
+          <strong>Kepadatan Area</strong><br>
+          <i style="background:rgba(255,0,0,0.8)"></i> Sangat Ramai<br>
+          <i style="background:rgba(0,255,0,0.8)"></i> Lumayan Ramai<br>
+          <i style="background:rgba(0,0,255,0.8)"></i> Kurang Ramai
+        `;
+        return div;
+      };
+      legend.addTo(map);
+    </script>
+  </body>
+</html>
